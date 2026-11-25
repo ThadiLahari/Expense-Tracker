@@ -1,0 +1,97 @@
+
+import csv
+import os
+from datetime import datetime
+
+FILE_NAME = "expenses.csv"
+
+# Store expenses as dictionaries
+expenses = []
+
+def add_expense():
+    try:
+        date = input("Enter date (YYYY-MM-DD): ")
+
+        # Validate date
+        datetime.strptime(date, "%Y-%m-%d")
+
+        category = input("Enter category: ").strip()
+
+        if not category:
+            print("Category cannot be empty!")
+            return
+
+        amount = float(input("Enter amount: "))
+
+        # Validate amount
+        if amount <= 0:
+            print("Amount must be greater than zero!")
+            return
+
+        expense = {
+            "date": date,
+            "category": category,
+            "amount": amount
+        }
+
+        expenses.append(expense)
+
+        file_exists = os.path.exists(FILE_NAME)
+
+        with open(FILE_NAME, "a", newline="") as file:
+            writer = csv.DictWriter(
+                file,
+                fieldnames=["date", "category", "amount"]
+            )
+
+            if not file_exists or os.path.getsize(FILE_NAME) == 0:
+                writer.writeheader()
+
+            writer.writerow(expense)
+
+        print("Expense saved successfully!")
+
+    except ValueError:
+        print("Invalid date or amount. Please try again!")
+
+
+def show_category_totals():
+    totals = {}
+
+    for expense in expenses:
+        category = expense["category"]
+        amount = expense["amount"]
+
+        totals[category] = totals.get(category, 0) + amount
+
+    print("\n--- Category-wise Spending ---")
+
+    if not totals:
+        print("No expenses recorded.")
+    else:
+        for category, total in totals.items():
+            print(f"{category}: Rs. {total:.2f}")
+
+
+def main():
+    while True:
+        print("\n===== EXPENSE TRACKER =====")
+        print("1. Add Expense")
+        print("2. Show Category Totals")
+        print("3. Exit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            add_expense()
+        elif choice == "2":
+            show_category_totals()
+        elif choice == "3":
+            print("Thank you for using Expense Tracker!")
+            break
+        else:
+            print("Invalid choice. Try again.")
+
+
+if __name__ == "__main__":
+    main()
