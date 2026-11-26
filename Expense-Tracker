@@ -1,96 +1,154 @@
 
+
 import csv
 import os
 from datetime import datetime
 
 FILE_NAME = "expenses.csv"
 
-# Store expenses as dictionaries
-expenses = []
+
+def initialize_file():
+    if not os.path.exists(FILE_NAME):
+        with open(FILE_NAME, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Date", "Category", "Description", "Amount"])
+
 
 def add_expense():
-    try:
-        date = input("Enter date (YYYY-MM-DD): ")
+    print("\n--- ADD EXPENSE ---")
 
-        # Validate date
-        datetime.strptime(date, "%Y-%m-%d")
+    date = input("Enter date (YYYY-MM-DD) or press Enter for today: ")
 
-        category = input("Enter category: ").strip()
-
-        if not category:
-            print("Category cannot be empty!")
+    if date == "":
+        date = datetime.today().strftime("%Y-%m-%d")
+    else:
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            print("Invalid date format!")
             return
 
-        amount = float(input("Enter amount: "))
+    category = input("Enter category: ").strip()
+    description = input("Enter description: ").strip()
 
-        # Validate amount
+    if not category or not description:
+        print("Category and description cannot be empty!")
+        return
+
+    try:
+        amount = float(input("Enter amount (Rs.): "))
+
         if amount <= 0:
             print("Amount must be greater than zero!")
             return
 
-        expense = {
-            "date": date,
-            "category": category,
-            "amount": amount
-        }
-
-        expenses.append(expense)
-
-        file_exists = os.path.exists(FILE_NAME)
-
-        with open(FILE_NAME, "a", newline="") as file:
-            writer = csv.DictWriter(
-                file,
-                fieldnames=["date", "category", "amount"]
-            )
-
-            if not file_exists or os.path.getsize(FILE_NAME) == 0:
-                writer.writeheader()
-
-            writer.writerow(expense)
-
-        print("Expense saved successfully!")
-
     except ValueError:
-        print("Invalid date or amount. Please try again!")
+        print("Please enter a valid amount!")
+        return
+
+    with open(FILE_NAME, "a", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow([date, category, description, amount])
+
+    print("Expense added successfully!")
 
 
-def show_category_totals():
-    totals = {}
+def view_expenses():
+    print("\n--- ALL EXPENSES ---")
+
+    with open(FILE_NAME, "r", newline="") as file:
+        reader = csv.reader(file)
+        next(reader)
+
+        expenses = list(reader)
+
+    if not expenses:
+        print("No expenses found!")
+        return
+
+    total = 0
 
     for expense in expenses:
-        category = expense["category"]
-        amount = expense["amount"]
+        date, category, description, amount = expense
+        amount = float(amount)
 
-        totals[category] = totals.get(category, 0) + amount
+        print(
+            f"Date: {date} | Category: {category} | "
+            f"Description: {description} | Amount: Rs.{amount:.2f}"
+        )
 
-    print("\n--- Category-wise Spending ---")
+        total += amount
 
-    if not totals:
-        print("No expenses recorded.")
-    else:
-        for category, total in totals.items():
-            print(f"{category}: Rs. {total:.2f}")
+    print(f"\nTotal Expenses: Rs.{total:.2f}")
+
+
+def total_expenses():
+    total = 0
+
+    with open(FILE_NAME, "r", newline="") as file:
+        reader = csv.reader(file)
+        next(reader)
+
+        for row in reader:
+            total += float(row[3])
+
+    print(f"\nTotal Expenses: Rs.{total:.2f}")
+
+
+def category_expenses():
+    print("\n--- CATEGORY-WISE EXPENSES ---")
+
+    categories = {}
+
+    with open(FILE_NAME, "r", newline="") as file:
+        reader = csv.reader(file)
+        next(reader)
+
+        for row in reader:
+            category = row[1]
+            amount = float(row[3])
+
+            categories[category] = categories.get(category, 0) + amount
+
+    if not categories:
+        print("No expenses found!")
+        return
+
+    for category, amount in categories.items():
+        print(f"{category}: Rs.{amount:.2f}")
 
 
 def main():
-    while True:
-        print("\n===== EXPENSE TRACKER =====")
-        print("1. Add Expense")
-        print("2. Show Category Totals")
-        print("3. Exit")
+    initialize_file()
 
-        choice = input("Enter your choice: ")
+    while True:
+        print("\n========== EXPENSE TRACKER ==========")
+        print("1. Add Expense")
+        print("2. View All Expenses")
+        print("3. View Total Expenses")
+        print("4. Category-wise Expenses")
+        print("5. Exit")
+
+        choice = input("\nEnter your choice (1-5): ")
 
         if choice == "1":
             add_expense()
+
         elif choice == "2":
-            show_category_totals()
+            view_expenses()
+
         elif choice == "3":
+            total_expenses()
+
+        elif choice == "4":
+            category_expenses()
+
+        elif choice == "5":
             print("Thank you for using Expense Tracker!")
             break
+
         else:
-            print("Invalid choice. Try again.")
+            print("Invalid choice! Please select 1-5.")
 
 
 if __name__ == "__main__":
